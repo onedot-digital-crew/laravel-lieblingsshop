@@ -40,4 +40,45 @@ class PixxService
         $token = self::$token;
         return str_replace("\n", '', Http::get(env("PIXX_URL") . "/files/{$id}/convert?accessToken={$token}" . '&options={"responseType":"base64"}')->body());
     }
+
+    public static function updateImage($success, $imageId, $imageData, $productData = null)
+    {
+        $token = self::$token;
+        $keywords = explode(',', $imageData['keywords']);
+
+        if ($success && $productData !== null) {
+            $keywords = array_merge($keywords, explode(', ', $productData['texts'][0]['keywords']));
+        }
+        
+        foreach ($keywords as &$keyword) {
+            if (strtolower($keyword) == 'pm-upload' || strtolower($keyword) == 'pm_upload') {
+                $keyword = $success ? 'pm-complete' : 'pm-error';
+            }
+        }
+
+        $curl = curl_init();
+
+        curl_setopt_array(
+            $curl,
+            [
+            CURLOPT_URL => env("PIXX_URL") . "/files/{$imageId}?accessToken={$token}&options=" . urlencode('{"keywords":"' . implode(',', $keywords) . '"}'),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'PUT',
+            CURLOPT_HTTPHEADER => [
+                'Cookie: PHPSESSID=jsp5v7ft1k9nk4a7h8hc16ajm0'
+                ]
+            ]
+        );
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+        
+        return json_decode($response, true);
+    }
 }
