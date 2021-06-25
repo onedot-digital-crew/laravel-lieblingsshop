@@ -44,6 +44,6 @@ class MainController extends Controller
             // if ($success) ... update Pixx data
         }
 
-        return response(array_merge(['message' => 'success'], $response), 201, $this->headers);
+        return response(['message' => 'success'], 201, $this->headers);
     }
 }
