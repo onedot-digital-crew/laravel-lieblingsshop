@@ -19,7 +19,7 @@ class MainController extends Controller
     public function execute(Request $request)
     {
         $imageIdArr = $request->json();
-        if($request['token']!= env('CUSTOM_AUTH_TOKEN') || $request->ip() != env('PIXX_IP')){
+        if ($request['token']!= env('CUSTOM_AUTH_TOKEN') || $request->ip() != env('PIXX_IP')) {
             return response(['message' => 'Unauthorized'], 401, $this->headers);
         }
 
@@ -31,7 +31,7 @@ class MainController extends Controller
         foreach ($imageIdArr as $imageId) {
             $data = PixxService::getImageData($imageId);
             $keywords = strtolower($data['keywords']);
-            if ((strpos($keywords, 'pm-upload') !== false || strpos($keywords, 'pm_upload') !== false) && is_integer($data['dynamicMetadata']['Artikelnummer'])) {
+            if ((strpos($keywords, 'pm-upload') !== false || strpos($keywords, 'pm_upload') !== false) && is_numeric($data['dynamicMetadata']['Artikelnummer'])) {
                 $imageData[$imageId] = $data;
             }
         }
