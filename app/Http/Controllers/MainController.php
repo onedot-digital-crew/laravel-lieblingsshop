@@ -31,7 +31,7 @@ class MainController extends Controller
         foreach ($imageIdArr as $imageId) {
             $data = PixxService::getImageData($imageId);
             $keywords = strtolower($data['keywords']);
-            if ((strpos($keywords, 'pm-upload') !== false || strpos($keywords, 'pm_upload') !== false) && is_numeric($data['dynamicMetadata']['Artikelnummer'])) {
+            if ((strpos($keywords, 'pm-upload') !== false || strpos($keywords, 'pm_upload') !== false) && is_integer($data['dynamicMetadata']['Artikelnummer'])) {
                 $imageData[$imageId] = $data;
             }
         }
