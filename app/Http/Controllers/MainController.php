@@ -19,7 +19,7 @@ class MainController extends Controller
     public function execute(Request $request)
     {
         $imageIdArr = $request->json();
-        if($request['token']!= 'je1Qu9JJkiXA5tzz0enA' || $request->ip() != '176.9.236.14'){
+        if($request['token']!= env('CUSTOM_AUTH_TOKEN') || $request->ip() != env('PIXX_IP')){
             return response(['message' => 'Unauthorized'], 401, $this->headers);
         }
 
