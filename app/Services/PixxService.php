@@ -58,10 +58,8 @@ class PixxService
 
         $curl = curl_init();
 
-        curl_setopt_array(
-            $curl,
-            [
-            CURLOPT_URL => env("PIXX_URL") . "/files/{$imageId}?accessToken={$token}&options=" . urlencode('{"keywords":"' . implode(',', $keywords) . '"}'),
+        curl_setopt_array($curl, [
+            CURLOPT_URL => env("PIXX_URL") . "/files/{$imageId}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -69,11 +67,11 @@ class PixxService
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'PUT',
-            CURLOPT_HTTPHEADER => [
-                'Cookie: PHPSESSID=jsp5v7ft1k9nk4a7h8hc16ajm0'
-                ]
-            ]
-        );
+            CURLOPT_POSTFIELDS => 'accessToken='. $token . '&options=' . urlencode('{"keywords":"' . implode(',', $keywords) . '"}'),
+            CURLOPT_HTTPHEADER =>[
+              'Content-Type: application/x-www-form-urlencoded',
+            ],
+        ]);
 
         $response = curl_exec($curl);
 
