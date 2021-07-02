@@ -19,7 +19,7 @@ class MainController extends Controller
     public function execute(Request $request)
     {
         $imageIdArr = $request->json();
-        if ($request['token']!= env('CUSTOM_AUTH_TOKEN') || $request->ip() != env('PIXX_IP')) {
+        if (!($request['token'] == env('CUSTOM_AUTH_TOKEN') || $request->ip() == env('PIXX_IP'))) {
             return response(['message' => 'Unauthorized'], 401, $this->headers);
         }
 
@@ -42,19 +42,17 @@ class MainController extends Controller
         }
 
         //Upload images to PlentyMarkets and update Pixx keywords
-        $productData = [];
         foreach ($imageData as $imageId => $data) {
-            $success = PlentyMarketsService::uploadImage($data);
+            $plentyResponse = PlentyMarketsService::uploadImage($data);
+            $success = !$plentyResponse->failed();
             if ($success) {
-                if (!\key_exists($data['dynamicMetadata']['Artikelnummer'], $productData)) {
-                    $productData[$data['dynamicMetadata']['Artikelnummer']] = PlentyMarketsService::getProductInfo($data['dynamicMetadata']['Artikelnummer']);
-                }
-                $temp = PixxService::updateImage($success, $imageId, $data, $productData[$data['dynamicMetadata']['Artikelnummer']]);
-            } else {
-                $temp = PixxService::updateImage($success, $imageId, $data);
+                $plentyResponse = PlentyMarketsService::getProductInfo($data['dynamicMetadata']['Artikelnummer']);
+                $success = !$plentyResponse->failed();
             }
+            $temp = PixxService::updateImage($success, $imageId, $data, $plentyResponse);
             if ($temp['status'] != 200) {
-                abort(424, 'Failed on photo ' . $imageId . ' ' . $data['originalFilename'] . ' message: ' . $temp['help']);
+                // ADD LOG
+                // abort(424, 'Failed on photo ' . $imageId . ' ' . $data['originalFilename'] . ' message: ' . $temp['help']);
             }
         }
 

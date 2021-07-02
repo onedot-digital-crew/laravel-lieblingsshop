@@ -44,12 +44,12 @@ class PlentyMarketsService
                 ]
             ]);
 
-        return !$request->failed();
+        return $request;
     }
 
     public static function getProductInfo($productId)
     {
         return Http::withToken(self::$token)
-            ->get(env("PLENTYMARKETS_URL") . "/items/$productId")->json();
+            ->get(env("PLENTYMARKETS_URL") . "/items/$productId");
     }
 }
