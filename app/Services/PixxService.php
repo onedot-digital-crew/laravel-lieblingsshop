@@ -6,16 +6,9 @@ use Illuminate\Support\Facades\Http;
 
 class PixxService
 {
-    private static $token = null;
-    private static $headers = [
-        'Access-Control-Allow-Origin'      => '*',
-        'Access-Control-Allow-Methods'     => 'POST, GET, OPTIONS, PUT, DELETE',
-        'Access-Control-Allow-Credentials' => 'true',
-        'Access-Control-Max-Age'           => '86400',
-        'Access-Control-Allow-Headers'     => 'Content-Type, Authorization, X-Requested-With'
-    ];
+    private $token = null;
 
-    public static function login()
+    public function __construct()
     {
         $request = Http::post(env("PIXX_URL") . "/accessToken", [
             'apiKey' => env("PIXX_API_KEY"),
@@ -23,49 +16,38 @@ class PixxService
         ])->json();
 
         if ($request['status'] != 200) {
-            abort($request['status'], $request['help'], self::$headers);
+            abort($request['status'], $request['help']);
         }
 
-        self::$token = $request['accessToken'];
+        $this->token = $request['accessToken'];
     }
 
-    public static function getImageData($id)
+    public function getImageData($id)
     {
-        $token = self::$token;
-        return Http::get(env("PIXX_URL") . "/files/{$id}?accessToken={$token}" . '&options={"fields":["id","keywords","dynamicMetadata","originalFilename","fileType"]}')->json();
+        return Http::get(env("PIXX_URL") . "/files/{$id}?accessToken={$this->token}" . '&options={"fields":["id","keywords","dynamicMetadata","originalFilename","fileType"]}')->json();
     }
 
-    public static function getEncodedImage($id)
+    public function getEncodedImage($id)
     {
-        $token = self::$token;
-        return str_replace("\n", '', Http::get(env("PIXX_URL") . "/files/{$id}/convert?accessToken={$token}" . '&options={"responseType":"base64"}')->body());
+        return str_replace("\n", '', Http::get(env("PIXX_URL") . "/files/{$id}/convert?accessToken={$this->token}" . '&options={"responseType":"base64"}')->body());
     }
 
-    public static function updateImage($success, $imageId, $imageData, $plentyResponse = null)
+    public function updateImage($image, array $keywords, $error = null)
     {
-        $token = self::$token;
-        $keywords = explode(',', $imageData['keywords']);
+        $options = [
+            'keywords' => implode(',', $keywords),
+        ];
 
-        if ($success) {
-            $keywords = array_merge($keywords, explode(', ', $plentyResponse->json()['texts'][0]['keywords']));
-        }
-
-        if (($key = array_search('pm-error', $keywords)) !== false) {
-            unset($keywords[$key]);
-            $keywords = array_values($keywords);
-        }
-        
-        foreach ($keywords as &$keyword) {
-            if (strtolower($keyword) == 'pm-upload' || strtolower($keyword) == 'pm_upload') {
-                $keyword = $success ? 'pm-complete' : 'pm-error';
-                $dynamicMetadata = $success ? "" : $plentyResponse->getReasonPhrase();
-            }
+        if ($error) {
+            $options['dynamicMetadata'] = [
+                'PlentymarketsError' => $error,
+            ];
         }
 
         $curl = curl_init();
 
         curl_setopt_array($curl, [
-            CURLOPT_URL => env("PIXX_URL") . "/files/{$imageId}",
+            CURLOPT_URL => env("PIXX_URL") . "/files/{$image}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -73,7 +55,7 @@ class PixxService
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'PUT',
-            CURLOPT_POSTFIELDS => 'accessToken='. $token . '&options=' . urlencode('{"keywords":"' . implode(',', $keywords) . '", "dynamicMetadata": {"PlentymarketsError": "' . $dynamicMetadata . '"}}'),
+            CURLOPT_POSTFIELDS => 'accessToken='. $this->token . '&options=' . urlencode(json_encode($options)),
             CURLOPT_HTTPHEADER =>[
               'Content-Type: application/x-www-form-urlencoded',
             ],

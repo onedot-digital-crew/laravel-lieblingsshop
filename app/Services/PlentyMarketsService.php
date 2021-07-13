@@ -6,16 +6,9 @@ use Illuminate\Support\Facades\Http;
 
 class PlentyMarketsService
 {
-    private static $token = null;
-    private static $headers = [
-        'Access-Control-Allow-Origin'      => '*',
-        'Access-Control-Allow-Methods'     => 'POST, GET, OPTIONS, PUT, DELETE',
-        'Access-Control-Allow-Credentials' => 'true',
-        'Access-Control-Max-Age'           => '86400',
-        'Access-Control-Allow-Headers'     => 'Content-Type, Authorization, X-Requested-With'
-    ];
+    private $token = null;
 
-    public static function login()
+    public function __construct()
     {
         $request =  Http::post(env("PLENTYMARKETS_URL") . "/login", [
             'username' => env("PLENTYMARKETS_USERNAME"),
@@ -23,18 +16,19 @@ class PlentyMarketsService
         ]);
 
         if ($request->failed()) {
-            abort(401, $request->body(), self::$headers);
+            abort(401, $request->body());
         }
 
-        self::$token = $request['accessToken'];
+        $this->token = $request['accessToken'];
     }
 
-    public static function uploadImage($imageData)
+    public function uploadImage($imageData, $position)
     {
-        $request = Http::withToken(self::$token)
+        $request = Http::withToken($this->token)
             ->post(env("PLENTYMARKETS_URL") . "/items/{$imageData['dynamicMetadata']['Artikelnummer']}/images/upload", [
                 'uploadFileName' => $imageData['originalFilename'],
                 'uploadImageData' => $imageData['encoded'],
+                'position' => $position,
                 'fileType' => strtolower($imageData['fileType']),
                 'availabilities' => [
                     [
@@ -47,9 +41,9 @@ class PlentyMarketsService
         return $request;
     }
 
-    public static function getProductInfo($productId)
+    public function getProductInfo($productId)
     {
-        return Http::withToken(self::$token)
+        return Http::withToken($this->token)
             ->get(env("PLENTYMARKETS_URL") . "/items/$productId");
     }
 }
