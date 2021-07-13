@@ -29,7 +29,7 @@ class MainController extends Controller
 
     public function execute(Request $request)
     {
-        if (!($request['token'] == env('CUSTOM_AUTH_TOKEN') || $request->ip() == env('PIXX_IP'))) {
+        if (!($request['token'] == env('CUSTOM_AUTH_TOKEN') && $request->ip() == env('PIXX_IP'))) {
             return response(['message' => 'Unauthorized'], 401, $this->headers);
         }
 
