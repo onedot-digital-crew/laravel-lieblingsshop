@@ -29,7 +29,7 @@ class PixxService
 
     public function getEncodedImage($id)
     {
-        return str_replace("\n", '', Http::get(env("PIXX_URL") . "/files/{$id}/convert?accessToken={$this->token}" . '&options={"responseType":"base64"}')->body());
+        return str_replace("\n", '', Http::get(env("PIXX_URL") . "/files/{$id}/convert?accessToken={$this->token}" . '&options={"responseType":"base64"}&downloadType=downloadFormat&downloadFormatId=' . env('PIXX_DOWNLOAD_FORMAT_ID'))->body());
     }
 
     public function updateImage($image, array $keywords, $error = null)
