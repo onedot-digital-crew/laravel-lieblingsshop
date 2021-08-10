@@ -50,6 +50,8 @@ class MainController extends Controller
                 if ($uploadResponse->failed()) {
                     $keywords->push($this->errorFlag);
                     $pixxClient->updateImage($image, $keywords->toArray(), $uploadResponse->getReasonPhrase());
+
+                    \Log::error($uploadResponse->getReasonPhrase(), $uploadResponse->json());
                 } else {
                     $keywords->push($this->completeFlag);
 
