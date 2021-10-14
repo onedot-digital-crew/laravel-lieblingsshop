@@ -33,6 +33,8 @@ class MainController extends Controller
             return response(['message' => 'Unauthorized'], 401, $this->headers);
         }
 
+        \Log::info('Pixx.io request received', $request->toArray());
+
         $pixxClient = new PixxService;
         $plentyClient = new PlentyMarketsService;
 
