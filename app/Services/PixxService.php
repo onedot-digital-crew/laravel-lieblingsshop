@@ -44,7 +44,7 @@ class PixxService
     public function updateImage($image, array $keywords, $error = null)
     {
         $options = [
-            'keywords' => implode(',', $keywords),
+            'keywords' => preg_replace('/[^A-Za-z0-9\&\_\-\+\ß\ä\ö\ü\Ä\Ö\Ü\.\@\,]/', '', implode(',', $keywords)),
         ];
 
         if ($error) {
