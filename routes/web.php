@@ -1,22 +1,41 @@
 <?php
 
-/** @var \Laravel\Lumen\Routing\Router $router */
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
-| Application Routes
+| Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register all of the routes for an application.
-| It is a breeze. Simply tell Lumen the URIs it should respond to
-| and give it the Closure to call when that URI is requested.
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
+Route::get('/', function () {
+    return view('welcome');
 });
 
-$router->post('/trigger', [
-    'uses' => 'MainController@execute'
-]);
+// Route::post('/trigger', [
+//     'uses' => 'MainController@execute'
+// ]);
+
+Route::post('/trigger', function (Request $request) {
+
+    if ($request->ip() != env('PIXX_IP')) {
+        return abort(401, 'Unauthorized');
+    }
+
+    if (!$request->events) {
+        \Log::error('Pixx.io request without events object', $request->all());
+        return abort(400);
+    }
+
+    $returnCode = Artisan::call('images:send');
+
+    return response()->json([
+        'message' => 'success',
+    ]);
+});
