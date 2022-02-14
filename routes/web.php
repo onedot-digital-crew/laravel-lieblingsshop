@@ -25,13 +25,13 @@ Route::post('/trigger', function (Request $request) {
         return abort(400, 'Pixx.io request without events object');
     }
 
-
     $pixxClient = new \App\Services\PixxService;
     $plentyClient = new \App\Services\PlentyMarketsService;
 
     // Flatten the events array from the request into a singular array of image ids
     $images = collect($request->json('events'))->pluck('id')->toArray();
 
+    \Log::info('Pixx.io upload triggered with ' . count($images) . ' images.');
 
     $returnCode = Artisan::call('images:send', [
         'image' => $images
