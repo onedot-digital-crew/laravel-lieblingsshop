@@ -13,7 +13,7 @@ class ImageManager extends Command
      *
      * @var string
      */
-    protected $signature = 'images:send';
+    protected $signature = 'images:send {image*}';
 
     /**
      * The console command description.
@@ -42,34 +42,84 @@ class ImageManager extends Command
         $pixxClient = new PixxService;
         $plentyClient = new PlentyMarketsService;
 
-dd($pixxClient);
+        $images = $this->argument('image');
 
-        foreach ($request->json() as $index => $image) {
-            $data = $pixxClient->getImageData($image);
+        $this->info('Sending ' . count($images) . ' images to Plentymarkets');
 
-            if ($this->hasUploadKeyword($data) && $this->hasArticleNumber($data)) {
-                $data['encoded'] = $pixxClient->getEncodedImage($image);
+        foreach ($images as $index => $id) {
+            $this->line('Grabbing meta data for image ' . $id);
 
+            $data = $pixxClient->getImageData($id);
+
+            // Sometimes the event doesn't contain an article number...
+            $hasArticleNumber = is_numeric($data['dynamicMetadata']['Artikelnummer']);
+
+            if ($hasArticleNumber && $this->containsUploadKeyword($data['keywords'])) {
+                $data['encoded'] = $pixxClient->getEncodedImage($id);
+
+                echo 'Sending image to Plentymarkets...';
                 $uploadResponse = $plentyClient->uploadImage($data, $index);
+                $this->line('done.');
 
                 // Gather the keywords in a collection
-                $keywords = $this->prepareKeywords($data);
+                $keywords = $this->prepareKeywords($data['keywords']);
 
                 if ($uploadResponse->failed()) {
-                    $keywords->push($this->errorFlag);
-                    $pixxClient->updateImage($image, $keywords->toArray(), $uploadResponse->getReasonPhrase());
+                    $keywords->push(config('app.error_flag'));
+                    $this->line('Writing keyword info back to Pixx.io');
+                    $pixxClient->updateImage($id, $keywords->toArray(), $uploadResponse->getReasonPhrase());
 
                     \Log::error($uploadResponse->getReasonPhrase(), $uploadResponse->json());
+                    $this->error($uploadResponse->getReasonPhrase());
                 } else {
-                    $keywords->push($this->completeFlag);
+                    $keywords->push(config('complete_flag'));
 
                     // Add the Plentymarkets product's keywords to the image
                     $response = $plentyClient->getProductInfo($data['dynamicMetadata']['Artikelnummer']);
                     $keywords = $keywords->merge(explode(', ', $response->json()['texts'][0]['keywords']))->unique();
 
-                    $pixxClient->updateImage($image, $keywords->toArray());
+                    $pixxClient->updateImage($id, $keywords->toArray());
                 }
+            } else {
+                $this->comment('The image has no upload keyword. Ignoring.');
             }
         }
+    }
+
+    /**
+     * Removes the upload trigger and places uploaded keyword in the image
+     * data's keywords and returns the result in a laravel collection.
+     *
+     * @param $keywords string containing the keywords to replace
+     * @return Illuminate\Support\Collection
+     */
+    private function prepareKeywords($keywords)
+    {
+        $results = collect(explode(',', $keywords));
+
+        /**
+         * Remove the upload trigger ("pm-upload" or similar) and the
+         * "pm-error" flag before trying again
+         */
+        $results = $results->filter(function ($i) {
+            return !in_array($i, config('app.accepted_upload_triggers')) && $i != config('app.error_flag');
+        });
+
+        return $results;
+    }
+
+    /**
+     * Checks whether the given string contians one of the accepted upload
+     * keywords defined in the "accepted_upload_triggers" in app config
+     *
+     * @param $keywords string containing the keywords to check
+     * @return boolean
+     */
+    private function containsUploadKeyword($keywords)
+    {
+        $keywords = explode(',', strtolower($keywords));
+
+        // If there are keywords in common with the upload triggers
+        return count(array_intersect($keywords, config('app.accepted_upload_triggers'))) > 0;
     }
 }

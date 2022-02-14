@@ -18,24 +18,26 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Route::post('/trigger', [
-//     'uses' => 'MainController@execute'
-// ]);
-
 Route::post('/trigger', function (Request $request) {
 
-    if ($request->ip() != env('PIXX_IP')) {
-        return abort(401, 'Unauthorized');
-    }
-
-    if (!$request->events) {
+    if (!$request->json('events')) {
         \Log::error('Pixx.io request without events object', $request->all());
-        return abort(400);
+        return abort(400, 'Pixx.io request without events object');
     }
 
-    $returnCode = Artisan::call('images:send');
+
+    $pixxClient = new \App\Services\PixxService;
+    $plentyClient = new \App\Services\PlentyMarketsService;
+
+    // Flatten the events array from the request into a singular array of image ids
+    $images = collect($request->json('events'))->pluck('id')->toArray();
+
+
+    $returnCode = Artisan::call('images:send', [
+        'image' => $images
+    ]);
 
     return response()->json([
         'message' => 'success',
     ]);
-});
+})->middleware('pixx');

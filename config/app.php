@@ -110,6 +110,38 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Pixx.io Accepted Upload Triggers
+    |--------------------------------------------------------------------------
+    |
+    | The following strings are to be recognized as valid upload triggers when
+    | contained in the "keywords" section of an image which has been received
+    | by the webhook trigger.
+    |
+    */
+
+    'accepted_upload_triggers' => [
+        'pmupload',
+        'pm-upload',
+        'pm_upload',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pixx.io Error and Complete Keywords
+    |--------------------------------------------------------------------------
+    |
+    | The following strings are to the agreed-upon keywords with which to tag
+    | images in Pixx.io once an error has occurred during the transfer process
+    | or once it's complete.
+    |
+    */
+
+    'error_flag' => 'pm-error',
+
+    'complete_flag' => 'pm-complete',
+
+    /*
+    |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------
     |

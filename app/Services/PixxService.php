@@ -10,10 +10,12 @@ class PixxService
 
     public function __construct()
     {
-        $request = Http::post(env("PIXX_URL") . "/accessToken", [
-            'apiKey' => env("PIXX_API_KEY"),
-            'refreshToken' => env("PIXX_REFRESH_TOKEN")
-        ])->json();
+        $request = Http::asForm()
+            ->post(env("PIXX_URL") . "/accessToken", [
+                'apiKey' => env("PIXX_API_KEY"),
+                'refreshToken' => env("PIXX_REFRESH_TOKEN")
+            ])
+            ->json();
 
         if ($request['status'] != 200) {
             abort($request['status'], $request['help']);
