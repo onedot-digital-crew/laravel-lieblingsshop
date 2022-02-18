@@ -52,13 +52,13 @@ class ImageManager extends Command
             $data = $pixxClient->getImageData($id);
 
             // Sometimes the event doesn't contain an article number...
-            $hasArticleNumber = is_numeric($data['dynamicMetadata']['Artikelnummer']);
+            $articleNumber = $this->extractArticleNumber($data);
 
-            if ($hasArticleNumber && $this->containsUploadKeyword($data['keywords'])) {
+            if ($articleNumber && $this->containsUploadKeyword($data['keywords'])) {
                 $data['encoded'] = $pixxClient->getEncodedImage($id);
 
                 echo 'Sending image to Plentymarkets...';
-                $uploadResponse = $plentyClient->uploadImage($data, $index);
+                $uploadResponse = $plentyClient->uploadImage($articleNumber, $data, $index);
                 $this->line('done.');
 
                 // Gather the keywords in a collection
@@ -84,6 +84,32 @@ class ImageManager extends Command
                 $this->comment('The image has no upload keyword. Ignoring.');
             }
         }
+    }
+
+    /**
+     * Given a Pixx.io response array, attempts to return the associated
+     * article number or returns null when none was detected.
+     *
+     * @param $data array from a pixx.io response
+     * @return int or null
+     */
+    private function extractArticleNumber($data)
+    {
+        if (is_numeric($data['dynamicMetadata']['Artikelnummer'])) {
+            return $data['dynamicMetadata']['Artikelnummer'];
+        } else {
+            $articleNumbers = explode(PHP_EOL, $data['dynamicMetadata']['Artikelnummer']);
+
+            /**
+             * INFO: If the client requests muliple article number support,
+             * that be done by extending the logic below.
+             */
+            if (count($articleNumbers)) {
+                return array_shift($articleNumbers);
+            }
+        }
+
+        return null;
     }
 
     /**

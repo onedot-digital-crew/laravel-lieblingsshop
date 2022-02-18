@@ -22,10 +22,10 @@ class PlentyMarketsService
         $this->token = $request['accessToken'];
     }
 
-    public function uploadImage($imageData, $position)
+    public function uploadImage($id, $imageData, $position)
     {
         $request = Http::withToken($this->token)
-            ->post(env("PLENTYMARKETS_URL") . "/items/{$imageData['dynamicMetadata']['Artikelnummer']}/images/upload", [
+            ->post(env("PLENTYMARKETS_URL") . "/items/" . $id . "/images/upload", [
                 'uploadFileName' => $imageData['originalFilename'],
                 'uploadImageData' => $imageData['encoded'],
                 'position' => $position,
